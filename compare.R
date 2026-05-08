@@ -5,9 +5,9 @@
 #  - generated galaxy ctalog with id_galaxy, id_group
 #  - mock galaxy catalog with id_galaxy_sky, id_fof (since we are using shark)
 
-gen_gal_path <- "galaxies.parquet"
-gen_group_path <- "groups.parquet"
-mock_gal_path <- "mock_galaxies.parquet"
+GENERATED_GALAXIES_PATH <- "galaxies.parquet"
+GENERATED_GROUPS_PATH <- "groups.parquet"
+MOCK_PATH <- "mock_galaxies.parquet"
 
 min_group_size <- 5L
 
@@ -24,6 +24,7 @@ bijcheck <- function(group_ids_1, group_ids_2, min_group_size) {
     count_table_1 >= min_group_size
   ]
 
+  # If there are no valid groups just fail
   if (length(valid_groups_1) == 0L) {
     return(list(e_num = 0L, e_den = 0L, q_num = 0, q_den = 0))
   }
@@ -99,9 +100,9 @@ drop_singletons <- function(group_ids, label = "groups") {
 
 # "Main script". Why doesn't R have a main ffs.
 message("Reading parquet files...")
-gen_gal <- read_parquet(gen_gal_path)
-gen_group <- read_parquet(gen_group_path)
-mock_gal <- read_parquet(mock_gal_path)
+gen_gal <- read_parquet(GENERATED_GALAXIES_PATH)
+gen_group <- read_parquet(GENERATED_GROUPS_PATH)
+mock_gal <- read_parquet(MOCK_PATH)
 
 message(sprintf("  generated galaxies : %d", nrow(gen_gal)))
 message(sprintf("  generated groups   : %d", nrow(gen_group)))
