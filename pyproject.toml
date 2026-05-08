@@ -1,0 +1,12 @@
+[project]
+name = "s-score"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "nessie-py>=1.0.11",
+    "polars>=1.40.1",
+    "requests>=2.33.1",
+    "scipy>=1.17.1",
+]
