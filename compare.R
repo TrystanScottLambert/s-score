@@ -2,12 +2,17 @@
 #
 # Three required parquet files:
 #  - generated group catalog with id_group, number_members
-#  - generated galaxy ctalog with id_galaxy, id_group
+#  - generated galaxy catalog with id_galaxy, id_group
 #  - mock galaxy catalog with id_galaxy_sky, id_fof (since we are using shark)
+
+suppressPackageStartupMessages({
+  library(arrow)
+  library(dplyr)
+})
 
 GENERATED_GALAXIES_PATH <- "galaxies.parquet"
 GENERATED_GROUPS_PATH <- "groups.parquet"
-MOCK_PATH <- "mock_galaxies.parquet"
+MOCK_PATH <- "mock.parquet"
 
 min_group_size <- 5L
 
@@ -100,21 +105,21 @@ drop_singletons <- function(group_ids, label = "groups") {
 
 # "Main script". Why doesn't R have a main ffs.
 message("Reading parquet files...")
-gen_gal <- read_parquet(GENERATED_GALAXIES_PATH)
-gen_group <- read_parquet(GENERATED_GROUPS_PATH)
-mock_gal <- read_parquet(MOCK_PATH)
+galaxy_catalog <- read_parquet(GENERATED_GALAXIES_PATH)
+group_catalog <- read_parquet(GENERATED_GROUPS_PATH)
+mock_catalog <- read_parquet(MOCK_PATH)
 
-message(sprintf("  generated galaxies : %d", nrow(gen_gal)))
-message(sprintf("  generated groups   : %d", nrow(gen_group)))
-message(sprintf("  mock galaxies      : %d", nrow(mock_gal)))
+message(sprintf("  generated galaxies : %d", nrow(galaxy_catalog)))
+message(sprintf("  generated groups   : %d", nrow(group_catalog)))
+message(sprintf("  mock galaxies      : %d", nrow(mock_catalog)))
 
 
 message("Matching galaxies between generated and mock catalogues...")
 
-joined <- gen_gal %>%
+joined <- galaxy_catalog %>%
   select(id_galaxy, id_group) %>%
   inner_join(
-    mock_gal %>% select(id_galaxy_sky, id_fof),
+    mock_catalog %>% select(id_galaxy_sky, id_fof),
     by = c("id_galaxy" = "id_galaxy_sky")
   )
 
@@ -128,6 +133,9 @@ if (nrow(joined) == 0L) {
 }
 
 message("Cleaning singleton groups...")
+gen_ids  <- as.integer(joined$id_group)
+mock_ids <- as.integer(joined$id_fof)
+
 gen_ids <- drop_singletons(gen_ids, label = "generated (id_group)")
 mock_ids <- drop_singletons(mock_ids, label = "mock      (id_fof)  ")
 
@@ -135,7 +143,6 @@ mock_ids <- drop_singletons(mock_ids, label = "mock      (id_fof)  ")
 message("Running bijective comparison...")
 fof_vs_mock <- bijcheck(gen_ids, mock_ids, min_group_size)
 mock_vs_fof <- bijcheck(mock_ids, gen_ids, min_group_size)
-
 
 E_FoF <- fof_vs_mock$e_num / fof_vs_mock$e_den
 E_mock <- mock_vs_fof$e_num / mock_vs_fof$e_den
